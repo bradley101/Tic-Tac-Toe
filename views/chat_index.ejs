@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chat</title>
+</head>
+<body>
+	<script type="text/javascript">
+		let name = prompt('Enter your name').trim();
+		while (name == null || name == '')
+			name = prompt('Enter your name').trim();
+		window.location = '/chat/' + name + '/<%= room %>';
+	</script>
+</body>
+</html>
