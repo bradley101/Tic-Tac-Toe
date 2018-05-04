@@ -14,8 +14,12 @@ app.get('/chat/:room', (req, res) => {
 });
 
 app.get('/chat/:name/:room', (req, res) => {
-	res.render('game', {name: req.params.name, room: req.params.room});
+	res.render('chat', {name: req.params.name, room: req.params.room});
 });
+
+app.get('/game', (req, res) => {
+	res.render('game');
+})
 
 
 let user = class {

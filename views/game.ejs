@@ -1,37 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Chat area</title>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Game</title>
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    
+    <style>
+        table {
+            margin: 20px auto;
+        }
+        table tr td {
+            width: 100px;
+            height: 100px;
+            border: 1px solid black;
+        }
+
+    </style>
+
 </head>
 <body>
-	<h2>Chat box <%= name %> </h2>
-	<h4>Send this link to your friends to invite them<br>
-		<a href="https://remote-tic-tac-toe.herokuapp.com/chat/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/chat/<%= room %></a></h4>
-	<div class="msg-area"></div>
-	<input type="text" name="msg">
-	<button>Send</button>
+    <table>
+        <tr>
+            <td>
+                <svg height="100" width="100">
+                    <circle cx="50" cy="50" r="40" stroke="blue" stroke-width="2" fill="white" />
+                </svg>
+            </td>
+            <td>
+                <svg height="100" width="100">
+                    <path d="m 10,10 l 80,80 M 90,10 L 10,90" stroke-width="2" stroke="red"/>
+                </svg>
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
 
-	<script type="text/javascript">
-		let socket = io();
+    <script>
+        $('td').click(function(e) {
 
-		var initmsg = '{"room": "<%= room %>"}';
-		socket.emit('init', initmsg);
-		socket.on('<%= room %>', function (data) {
-			console.log(data);
-			var j = JSON.parse(data);
-			$('.msg-area').append('<p><strong>' + j.sender + '</strong>: ' + j.msg + '</p>');
-		});
-		$('button').click(function (e) {
-			var m = '{"sender": "<%= name %>", "msg": "' + $('input').val() + '"}';
-			var j = JSON.parse(m);
-			$('.msg-area').append('<p><strong>' + j.sender + '</strong>: ' + j.msg + '</p>');
-			socket.emit('<%= room %>', m);
-		});
-	</script>
+        })
+    </script>
 
 </body>
 </html>
