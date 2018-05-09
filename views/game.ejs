@@ -51,6 +51,7 @@
     <div id="scores">
 
     </div>
+    <button>Rematch</button>
 
     <script>
         let _ = $('table td')
@@ -75,10 +76,18 @@
         socket.on('init_scores', initScore)
         socket.on('move', move);
         socket.on('showOppMove', showOppMove);
+        socket.on('gameOver', gameOver);
+        socket.on('clearBoard', d => {
+            let tmp = $('table td')
+            for (let ci = 0; ci < 9; ++ci) {
+                tmp[ci].innerHTML = ''
+            }
+        })
         
         socket.emit('init', `{"room": "${room}", "name": "${name}"}`);
 
         function initScore(data) {
+            $('button').css('display', 'none');
             let j = JSON.parse(data);
             roundId = j.id;
             delete j.id
@@ -115,22 +124,16 @@
             socket.emit('move_completed', j);
         }
 
-        function gatherBoardData() {
-            let b = $('table td')
-            let data = [
-                ['', '', ''],
-                ['', '', ''],
-                ['', '', '']
-            ]
-            for (let i = 0; i < b.length; ++i) {
-                let tb = b[i].getElementsByTagName('svg')
-                if (tb.length > 0) {
-                    tb = tb[0];
-                    data[Math.floor(i / 3)][i % 3] = tb.id;
-                }
-            }
-            return data;
+        function gameOver(data) {
+            let j = JSON.parse(data)
+            
+            $('button').css('display', 'block')
+            console.log($('button').css('display'))
         }
+
+        // $('button').click(e => {
+        //     socket.emit('rematch', '')
+        // })
     </script>
 
 </body>

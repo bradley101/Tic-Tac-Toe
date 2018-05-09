@@ -46,79 +46,6 @@ let user = class {
 	}
 };
 
-let game_user = class {
-	constructor(s) {
-		this.s = s;
-		this.gameStart.bind(this);
-		var tthis = this;
-		s.on('init', function (data) {
-			console.log('Init data from client - ' + data);
-			var j = JSON.parse(data);
-			const room = j.room, name = j.name;
-			tthis.room = room;
-			
-			if (!sessions[room]) {
-				sessions[room] = {
-					count: 1,
-					users: [
-						{
-							id: s.id,
-							name: name,
-							score: 0
-						}
-					]
-				}
-				
-			} else if (sessions[room].count == 1) {
-				sessions[room].count = 2
-				sessions[room].users.push({
-					id: s.id,
-					name: name,
-					score: 0
-				})
-
-				var msg = {};
-				Object.assign(msg, { start: true }, sessions[room].users);
-				msg = JSON.stringify(msg);
-				var start_event = `${room}_start`;
-				tthis.sendToId(sessions[room].users, start_event, JSON.stringify({start: true}));
-				tthis.sendToId(sessions[room].users, 
-					`${room}_refresh_score`, 
-					JSON.stringify(sessions[room].users
-				));
-
-				tthis.gameStart();
-			} else {
-				s.disconnect(false);
-				console.log('server disconnect event');
-			}
-
-			s.on('disconnect', (reason) => {
-				console.log('client disconnected event');
-				sessions[room].count -= 1
-				for (var i = 0; i < sessions[room].users.length; ++i) {
-					if (sessions[room].users[i].id == s.id) {
-						sessions[room].users.splice(i, 1);
-						break;
-					}
-				}
-			})
-		});
-	}
-
-	sendToId(ids, e, m) {
-		ids.forEach(id => {
-			io.to(id.id).emit(e, m);
-		});
-	}
-
-	gameStart() {
-		let turn = 0;
-		let s = this.s;
-
-	}
-};
-
 let GameEnv = class {
 	constructor(user1, user2) {
 		this.env = {
@@ -197,8 +124,6 @@ let GameEnv = class {
 					// end the round
 					console.log('winner');
 					let winnerTurn = this.turn == 0 ? 1 : 0;
-					that.env.score[winnerTurn].wins += 1
-					that.env.score[this.turn].losses += 1
 					this.sendScore('init_scores');
 				} else {
 					this.move();
@@ -243,10 +168,17 @@ let GameEnv = class {
 
 		let round = new this.GameRound();
 		round.move();
-	}
+		
+		let rematchCallback = (d) => {
+			this.env.users[0].socket.emit('clearBoard', '')
+			this.env.users[1].socket.emit('clearBoard', '')
+			round = null
+			round = new that.GameRound();
+			round.move()
+		}
 
-	gameStart(round) {
-		console.log(round.turn);
+		this.env.users[0].socket.on('rematch', rematchCallback)
+		this.env.users[1].socket.on('rematch', rematchCallback)
 
 	}
 }
