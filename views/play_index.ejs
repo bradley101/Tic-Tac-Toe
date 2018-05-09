@@ -3,18 +3,14 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title></title>
+	<title>Chat</title>
 </head>
 <body>
 	<script type="text/javascript">
 		let name = prompt('Enter your name').trim();
 		while (name == null || name == '')
 			name = prompt('Enter your name').trim();
-		let roomname = Math.random().toString(36).substring(7);
-		// enable this for chat only
-		// window.location = '/chat/' + name + '/' + roomname;
-
-		window.location = `/play/${name}/${roomname}`;
+		window.location = '/play/' + name + '/<%= room %>';
 	</script>
 </body>
 </html>
