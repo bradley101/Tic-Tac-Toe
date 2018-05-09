@@ -140,11 +140,18 @@ let GameEnv = class {
 		this.GameRound = class {
 			constructor(turn = undefined) {
 				this.moves = 0
+				this.situation = [
+					['', '', ''], 
+					['', '', ''], 
+					['', '', '']
+				];
 				this.turn = turn == undefined ? Math.round(Math.random()) : turn == 0 ? 1 : 0;
 				this.roundId = Math.random().toString(36).substring(7);
 
 				this.sendScore.bind(this);
+				this.start.bind(this);
 				this.move.bind(this);
+				this.moveCompletedCallback.bind(this);
 
 				this.sendScore('init_scores');
 			}
@@ -157,11 +164,25 @@ let GameEnv = class {
 				that.env.users[0].socket.emit(event, score);
 				that.env.users[1].socket.emit(event, score);
 			}
+			start() {
+				that.env.users[0].socket.on('move_completed', this.moveCompletedCallback);
+				that.env.users[1].socket.on('move_completed', this.moveCompletedCallback);
+			}
 			move() {
-				that.env.users[this.turn].socket.on('move_completed', (data) => {
-					
-				})
-				that.env.users[this.turn].socket.emit('move', {"move":`${this.moves}`});
+				that.env.users[this.turn].socket.emit('move', 
+					JSON.stringify({"turn":`${this.turn}`,"move":`${this.moves}`, "round_id": `${this.roundId}`})
+				);
+			}
+			moveCompletedCallback(data) {
+				let j = JSON.parse(data);
+				this.turn = 1 - parseInt(j.turn);
+				this.moves = parseInt(j.moves) + 1;
+
+				// j.boardData contains the board info
+				// analyze the data and check if any user won the round
+				// if no one is the winner then this.move()
+
+				this.move();
 			}
 		}
 
