@@ -82,7 +82,10 @@ let game_user = class {
 				msg = JSON.stringify(msg);
 				var start_event = `${room}_start`;
 				tthis.sendToId(sessions[room].users, start_event, JSON.stringify({start: true}));
-				tthis.sendToId(sessions[room].users, `${room}_refresh_score`, JSON.stringify(sessions[room].users));
+				tthis.sendToId(sessions[room].users, 
+					`${room}_refresh_score`, 
+					JSON.stringify(sessions[room].users
+				));
 
 				tthis.gameStart();
 			} else {
@@ -132,20 +135,44 @@ let GameEnv = class {
 			]
 		}
 
-		console.log('Game env created');
-
 		var that = this;
-		var m = {};
-		m[that.env.users[0].socket.id] = [that.env.users[0].name, that.env.score[0]];
-		m[that.env.users[1].socket.id] = [that.env.users[1].name, that.env.score[1]];
-		m = JSON.stringify(m)
-		io.to(this.env.users[0].socket.id).emit('init_scores', m);
-		io.to(this.env.users[1].socket.id).emit('init_scores', m);
 
-		this.gameStart();
+		this.GameRound = class {
+			constructor(turn = undefined) {
+				this.moves = 0
+				this.turn = turn == undefined ? Math.round(Math.random()) : turn == 0 ? 1 : 0;
+				this.roundId = Math.random().toString(36).substring(7);
+
+				this.sendScore.bind(this);
+				this.move.bind(this);
+
+				this.sendScore('init_scores');
+			}
+			sendScore(event) {
+				let score = {}
+				score['id'] = this.roundId;
+				score[that.env.users[0].socket.id] = [that.env.users[0].name, that.env.score[0]];
+				score[that.env.users[1].socket.id] = [that.env.users[1].name, that.env.score[1]];
+				score = JSON.stringify(score);
+				that.env.users[0].socket.emit(event, score);
+				that.env.users[1].socket.emit(event, score);
+			}
+			move() {
+				that.env.users[this.turn].socket.on('move_completed', (data) => {
+					
+				})
+				that.env.users[this.turn].socket.emit('move', {"move":`${this.moves}`});
+			}
+		}
+
+		let round = new this.GameRound();
+
+		this.gameStart.bind(this);
+		this.gameStart(round);
 	}
 
-	gameStart() {
+	gameStart(round) {
+		console.log(round.turn);
 
 	}
 }
@@ -155,7 +182,6 @@ io.on('connection', (socket) => {
 	// var u = new user(socket);
 	socket.on('init', (data) => {
 		var j = JSON.parse(data);
-		console.log(data);
 		if (sessions[j.room] && sessions[j.room].users.length < 2) {
 			socket.emit('init_id', socket.id);
 			sessions[j.room].users.push(

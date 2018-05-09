@@ -57,6 +57,7 @@
     <script>
         let socket = io()
         let id = ''
+        let roundId = ''
         const room = "<%= room %>", name = "<%= name %>";
         socket.on('disconnect', (reason) => {
             console.log(reason)
@@ -64,17 +65,18 @@
         socket.on('init_id', data => {
             id = data
         })
-        socket.on('init_scores', refreshScore)
+        socket.on('init_scores', initScore)
         
         socket.emit('init', `{"room": "${room}", "name": "${name}"}`);
 
-        function refreshScore(data) {
+        function initScore(data) {
             let j = JSON.parse(data);
+            roundId = j.id;
+            delete j.id
             for (key in j) {
-                $('#scores').append('<p><strong>' + j[key][0] + ': </strong>' + j[key][1].toString() + '</p>')    
+                console.log(j[key])
+                $('#scores').append('<p><strong>' + j[key][0] + ': </strong>' + `${j[key][1].wins} / ${j[key][1].losses}` + '</p>')    
             }
-            // $('#scores').append('<p><strong>' + j[id][0] + '</strong></p>')
-            // $('#scores').append('<p><strong>' + j[id][0] + '</strong></p>')
         }
     </script>
 
