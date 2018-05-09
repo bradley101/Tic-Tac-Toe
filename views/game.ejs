@@ -23,6 +23,8 @@
 
 </head>
 <body>
+    <h4>Send this link to your friends to invite them<br>
+        <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h4>
     <div id="turn"></div>
     <table>
         <tr>
@@ -59,6 +61,7 @@
         let socket = io()
         let id = ''
         let roundId = ''
+        let callbackJ = ''
         const room = "<%= room %>", name = "<%= name %>";
         const cross_symbol_svg = '<svg id="x" height="100" width="100"><path d="m 10,10 l 80,80 M 90,10 L 10,90" stroke-width="2" stroke="red"/></svg>';
         const circle_symbol_svg = '<svg id="o" height="100" width="100"><circle cx="50" cy="50" r="40" stroke="blue" stroke-width="2" fill="white" /></svg>';
@@ -79,6 +82,7 @@
             let j = JSON.parse(data);
             roundId = j.id;
             delete j.id
+            $('#scores').html('')
             for (key in j) {
                 console.log(j[key])
                 $('#scores').append('<p><strong>' + j[key][0] + ': </strong>' + `${j[key][1].wins} / ${j[key][1].losses}` + '</p>')    
@@ -88,18 +92,16 @@
         function move(data) {
             console.log(data);
             $('table').css('pointer-events', 'auto');
-            let j = JSON.parse(data);
-            $('td').click((e) => {
-                let t = e.currentTarget
-                $(t).html(symbols[j.symbol]);
-                $('table').css('pointer-events', 'none');
-                j["move-x"] = t.dataset.i;j["move-y"] = t.dataset.j;
-                sendMoveAck(j)
-            })
+            callbackJ = JSON.parse(data);
         }
-
+        $('td').click({j: callbackJ}, tdClickCallback);
         function tdClickCallback(e) {
-            
+            let j = callbackJ;
+            let t = e.currentTarget
+            $(t).html(symbols[j.symbol]);
+            $('table').css('pointer-events', 'none');
+            j["move-x"] = t.dataset.i;j["move-y"] = t.dataset.j;
+            sendMoveAck(j)
         }
 
         function showOppMove(data) {

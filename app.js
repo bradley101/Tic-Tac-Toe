@@ -186,34 +186,49 @@ let GameEnv = class {
 			moveCompletedCallback(data) {
 				let j = JSON.parse(data);
 				this.situation[parseInt(j["move-x"])][parseInt(j["move-y"])] = this.symbols[this.turn];
-				this.turn = 1 - parseInt(j.turn);
-				this.moves = parseInt(j.moves) + 1;
-				console.log(this.situation)
+				this.turn = this.turn == 0 ? 1 : 0;
+				this.moves += 1
 
 				that.env.users[this.turn].socket.emit('showOppMove', data);
 
-				this.analyzeSituation();
 
-				this.move();
+				if (this.analyzeSituation()) {
+					// winner is declared
+					// end the round
+					console.log('winner');
+					let winnerTurn = this.turn == 0 ? 1 : 0;
+					that.env.score[winnerTurn].wins += 1
+					that.env.score[this.turn].losses += 1
+					this.sendScore('init_scores');
+				} else {
+					this.move();
+				}
 			}
 			analyzeSituation() {
 				let t = this.situation;
+				let w = ''
+
 				if (t[0][0] == t[0][1] && t[0][1] == t[0][2] && t[0][0] != '')
-					this.declareWinner(t[0][0]);
+					w = t[0][0]
 				else if (t[1][0] == t[1][1] && t[1][1] == t[1][2] && t[1][0] != '')
-					this.declareWinner(t[1][0])
+					w = t[1][0]
 				else if (t[2][0] == t[2][1] && t[2][1] == t[2][2] && t[2][0] != '')
-					this.declareWinner(t[2][0])
+					w = t[2][0]
 				else if (t[0][0] == t[1][0] && t[1][0] == t[2][0] && t[0][0] != '')
-					this.declareWinner(t[0][0])
+					w = t[0][0]
 				else if (t[0][1] == t[1][1] && t[1][1] == t[2][1] && t[0][1] != '')
-					this.declareWinner(t[0][1])
+					w = t[0][1]
 				else if (t[0][2] == t[1][2] && t[1][2] == t[2][2] && t[0][2] != '')
-					this.declareWinner(t[0][2])
+					w = t[0][2]
 				else if (t[0][0] == t[1][1] && t[1][1] == t[2][2] && t[0][0] != '')
-					this.declareWinner(t[0][0])
+					w = t[0][0]
 				else if (t[0][2] == t[1][1] && t[1][1] == t[2][0] && t[0][2] != '')
-					this.declareWinner(t[0][2])
+					w = t[0][2]
+
+				if (w != '') {
+					return this.declareWinner(w)
+				}
+				return false
 			}
 			declareWinner(m) {
 				let winnerTurn = this.turn == 0 ? 1 : 0;
@@ -222,6 +237,7 @@ let GameEnv = class {
 				that.env.users[1].socket.emit('gameOver', msg);
 				that.env.score[winnerTurn].wins += 1
 				that.env.score[this.turn].losses += 1
+				return true
 			}
 		}
 
