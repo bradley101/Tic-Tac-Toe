@@ -146,14 +146,20 @@ let GameEnv = class {
 					['', '', '']
 				];
 				this.turn = turn == undefined ? Math.round(Math.random()) : turn == 0 ? 1 : 0;
+				this.symbols = {}
+				this.symbols[this.turn] = 'x'
+				this.symbols[this.turn == 0 ? 1 : 0] = 'o'
 				this.roundId = Math.random().toString(36).substring(7);
 
 				this.sendScore.bind(this);
 				this.start.bind(this);
 				this.move.bind(this);
 				this.moveCompletedCallback.bind(this);
+				this.analyzeSituation.bind(this);
+				this.declareWinner.bind(this);
 
 				this.sendScore('init_scores');
+				this.start();
 			}
 			sendScore(event) {
 				let score = {}
@@ -165,31 +171,62 @@ let GameEnv = class {
 				that.env.users[1].socket.emit(event, score);
 			}
 			start() {
-				that.env.users[0].socket.on('move_completed', this.moveCompletedCallback);
-				that.env.users[1].socket.on('move_completed', this.moveCompletedCallback);
+				that.env.users[0].socket.on('move_completed', this.moveCompletedCallback.bind(this));
+				that.env.users[1].socket.on('move_completed', this.moveCompletedCallback.bind(this));
 			}
 			move() {
 				that.env.users[this.turn].socket.emit('move', 
-					JSON.stringify({"turn":`${this.turn}`,"move":`${this.moves}`, "round_id": `${this.roundId}`})
+					JSON.stringify({"turn":`${this.turn}`,
+									"move":`${this.moves}`, 
+									"round_id": `${this.roundId}`,
+									"symbol": `${this.symbols[this.turn]}`
+					})
 				);
 			}
 			moveCompletedCallback(data) {
 				let j = JSON.parse(data);
+				this.situation[parseInt(j["move-x"])][parseInt(j["move-y"])] = this.symbols[this.turn];
 				this.turn = 1 - parseInt(j.turn);
 				this.moves = parseInt(j.moves) + 1;
+				console.log(this.situation)
 
-				// j.boardData contains the board info
-				// analyze the data and check if any user won the round
-				// if no one is the winner then this.move()
+				that.env.users[this.turn].socket.emit('showOppMove', data);
+
+				this.analyzeSituation();
 
 				this.move();
+			}
+			analyzeSituation() {
+				let t = this.situation;
+				if (t[0][0] == t[0][1] && t[0][1] == t[0][2] && t[0][0] != '')
+					this.declareWinner(t[0][0]);
+				else if (t[1][0] == t[1][1] && t[1][1] == t[1][2] && t[1][0] != '')
+					this.declareWinner(t[1][0])
+				else if (t[2][0] == t[2][1] && t[2][1] == t[2][2] && t[2][0] != '')
+					this.declareWinner(t[2][0])
+				else if (t[0][0] == t[1][0] && t[1][0] == t[2][0] && t[0][0] != '')
+					this.declareWinner(t[0][0])
+				else if (t[0][1] == t[1][1] && t[1][1] == t[2][1] && t[0][1] != '')
+					this.declareWinner(t[0][1])
+				else if (t[0][2] == t[1][2] && t[1][2] == t[2][2] && t[0][2] != '')
+					this.declareWinner(t[0][2])
+				else if (t[0][0] == t[1][1] && t[1][1] == t[2][2] && t[0][0] != '')
+					this.declareWinner(t[0][0])
+				else if (t[0][2] == t[1][1] && t[1][1] == t[2][0] && t[0][2] != '')
+					this.declareWinner(t[0][2])
+			}
+			declareWinner(m) {
+				let winnerTurn = this.turn == 0 ? 1 : 0;
+				let msg = JSON.stringify({"winner": `${that.env.users[winnerTurn].socket.id}`});
+				that.env.users[0].socket.emit('gameOver', msg)
+				that.env.users[1].socket.emit('gameOver', msg);
+				that.env.score[winnerTurn].wins += 1
+				that.env.score[this.turn].losses += 1
 			}
 		}
 
 		let round = new this.GameRound();
-
-		this.gameStart.bind(this);
-		this.gameStart(round);
+		round.move();
 	}
 
 	gameStart(round) {

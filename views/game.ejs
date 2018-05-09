@@ -27,14 +27,10 @@
     <table>
         <tr>
             <td>
-                <svg height="100" width="100">
-                    <circle cx="50" cy="50" r="40" stroke="blue" stroke-width="2" fill="white" />
-                </svg>
+                
             </td>
             <td>
-                <svg height="100" width="100">
-                    <path d="m 10,10 l 80,80 M 90,10 L 10,90" stroke-width="2" stroke="red"/>
-                </svg>
+                
             </td>
             <td></td>
         </tr>
@@ -55,17 +51,27 @@
     </div>
 
     <script>
+        let _ = $('table td')
+        for (let i = 0; i < _.length; ++i) {
+            _[i].dataset.i = `${Math.floor(i/3)}`
+            _[i].dataset.j = `${i%3}`
+        }
         let socket = io()
         let id = ''
         let roundId = ''
         const room = "<%= room %>", name = "<%= name %>";
-        socket.on('disconnect', (reason) => {
-            console.log(reason)
-        })
-        socket.on('init_id', data => {
-            id = data
-        })
+        const cross_symbol_svg = '<svg id="x" height="100" width="100"><path d="m 10,10 l 80,80 M 90,10 L 10,90" stroke-width="2" stroke="red"/></svg>';
+        const circle_symbol_svg = '<svg id="o" height="100" width="100"><circle cx="50" cy="50" r="40" stroke="blue" stroke-width="2" fill="white" /></svg>';
+        
+        const symbols = {}; symbols['x'] = cross_symbol_svg; symbols['o'] = circle_symbol_svg;
+
+        $('table').css('pointer-events', 'none');
+
+        socket.on('disconnect', reason => console.log(reason))
+        socket.on('init_id', data => id = data)
         socket.on('init_scores', initScore)
+        socket.on('move', move);
+        socket.on('showOppMove', showOppMove);
         
         socket.emit('init', `{"room": "${room}", "name": "${name}"}`);
 
@@ -77,6 +83,51 @@
                 console.log(j[key])
                 $('#scores').append('<p><strong>' + j[key][0] + ': </strong>' + `${j[key][1].wins} / ${j[key][1].losses}` + '</p>')    
             }
+        }
+
+        function move(data) {
+            console.log(data);
+            $('table').css('pointer-events', 'auto');
+            let j = JSON.parse(data);
+            $('td').click((e) => {
+                let t = e.currentTarget
+                $(t).html(symbols[j.symbol]);
+                $('table').css('pointer-events', 'none');
+                j["move-x"] = t.dataset.i;j["move-y"] = t.dataset.j;
+                sendMoveAck(j)
+            })
+        }
+
+        function tdClickCallback(e) {
+            
+        }
+
+        function showOppMove(data) {
+            let j = JSON.parse(data);
+            $('table td')[parseInt(j["move-x"]) * 3 + parseInt(j["move-y"])].innerHTML = symbols[j.symbol];
+        }
+
+        function sendMoveAck(j) {
+            // j["data"] = gatherBoardData();
+            j = JSON.stringify(j);
+            socket.emit('move_completed', j);
+        }
+
+        function gatherBoardData() {
+            let b = $('table td')
+            let data = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ]
+            for (let i = 0; i < b.length; ++i) {
+                let tb = b[i].getElementsByTagName('svg')
+                if (tb.length > 0) {
+                    tb = tb[0];
+                    data[Math.floor(i / 3)][i % 3] = tb.id;
+                }
+            }
+            return data;
         }
     </script>
 
