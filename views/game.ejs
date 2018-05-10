@@ -36,13 +36,35 @@
             text-align: center;
             font-size: 1.2em;
         }
+        #btn-rematch {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px black solid;
+            background: white;
+            width: -moz-fit-content;
+            width: -webkit-fit-content;
+            width: -o-fit-content;
+            width: -ms-fit-content;
+            margin: auto;
+        }
+        .hide {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
 
     </style>
 
 </head>
 <body>
-    <h5>Send this link to your friends to invite them<br>
+    <h5>Create your own room by clicking here<br>
+        <a href="https://remote-tic-tac-toe.herokuapp.com/" target="_blank">https://remote-tic-tac-toe.herokuapp.com/</a></h5>
+    </h5>
+    <h5>Send this link to your friends to invite them to this round<br>
         <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h5>
+    <br>
+    
     <div id="turn"></div>
     <table>
         <tr>
@@ -92,6 +114,8 @@
         const symbols = {}; symbols['x'] = cross_symbol_svg; symbols['o'] = circle_symbol_svg;
         let players = {}
 
+        $('#btn-rematch').hide()
+
         $('table').css('pointer-events', 'none');
 
         socket.on('disconnect', reason => console.log(reason))
@@ -109,16 +133,19 @@
                 tmp[ci].innerHTML = ''
             }
         })
+        socket.on('turn', turn);
+        // socket.on('winner', winner);
 
-        $('button').click(e => {
+        $('#btn-rematch').click(e => {
+            $(e.currentTarget).hide()
             socket.emit('rematch', '');
         })
         
         socket.emit('init', `{"room": "${room}", "name": "${name}"}`);
 
         function initScore(data) {
-            $('#btn-rematch').css('display', 'none');
             $('.waiting-modal').hide()
+            
             let j = JSON.parse(data);
             roundId = j.id;
             delete j.id
@@ -146,10 +173,17 @@
             $('table').css('pointer-events', 'none');
             j["move-x"] = t.dataset.i;j["move-y"] = t.dataset.j;
             sendMoveAck(j)
+            $('#btn-rematch').hide()
+        }
+
+        function turn(data) {
+            let j = JSON.parse(data)
+            $('#turn').html(`<strong>${players[j["turn"]]}</strong> turn`)
         }
 
         function showOppMove(data) {
             let j = JSON.parse(data);
+            $('#btn-rematch').show()
             $('table td')[parseInt(j["move-x"]) * 3 + parseInt(j["move-y"])].innerHTML = symbols[j.symbol];
         }
 
@@ -159,12 +193,16 @@
             socket.emit('move_completed', j);
         }
 
+        function winner(data) {
+            let j = JSON.parse(data)
+            console.log(j)
+            $('#turn').html(`<strong>${players[j["winner"]]}</strong> won the round`)
+        }
+
         function gameOver(data) {
             let j = JSON.parse(data)
-    
-            $('#btn-rematch').css('display', 'block');
-            // let k = $('button').css('display')
-            // console.log(k)
+            $('#btn-rematch').show()
+            $('#turn').html(`<strong>${players[j["winner"]]}</strong> won the round`)
         }
 
         

@@ -73,6 +73,7 @@ let GameEnv = class {
 					['', '', '']
 				];
 				this.turn = turn == undefined ? Math.round(Math.random()) : turn == 0 ? 1 : 0;
+				this.starterTurn = this.turn
 				this.symbols = {}
 				this.symbols[this.turn] = 'x'
 				this.symbols[this.turn == 0 ? 1 : 0] = 'o'
@@ -106,6 +107,8 @@ let GameEnv = class {
 				that.env.users[1].socket.on('move_completed', this.moveCompletedCallback.bind(this));
 			}
 			move() {
+				that.env.users[0].socket.emit('turn', JSON.stringify({"turn": `${this.turn}`}))
+				that.env.users[1].socket.emit('turn', JSON.stringify({"turn": `${this.turn}`}))
 				that.env.users[this.turn].socket.emit('move', 
 					JSON.stringify({"turn":`${this.turn}`,
 									"move":`${this.moves}`, 
@@ -162,7 +165,7 @@ let GameEnv = class {
 			}
 			declareWinner(m) {
 				let winnerTurn = this.turn == 0 ? 1 : 0;
-				let msg = JSON.stringify({"winner": `${that.env.users[winnerTurn].socket.id}`});
+				let msg = JSON.stringify({"winner": `${winnerTurn}`});
 				that.env.users[0].socket.emit('gameOver', msg)
 				that.env.users[1].socket.emit('gameOver', msg);
 				that.env.score[winnerTurn].wins += 1
@@ -178,9 +181,9 @@ let GameEnv = class {
 			console.log('rematch called')
 			this.env.users[0].socket.emit('clearBoard', '')
 			this.env.users[1].socket.emit('clearBoard', '')
-			let prevStarter = round.turn
+			let prevStarter = round.starterTurn
 			round = null
-			round = new this.GameRound(turn = prevStarter);
+			round = new this.GameRound(prevStarter);
 			round.move()
 			console.log(round.situation)
 		}
