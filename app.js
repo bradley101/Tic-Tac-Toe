@@ -93,6 +93,10 @@ let GameEnv = class {
 				score['id'] = this.roundId;
 				score[that.env.users[0].socket.id] = [that.env.users[0].name, that.env.score[0]];
 				score[that.env.users[1].socket.id] = [that.env.users[1].name, that.env.score[1]];
+				score["players"] = {
+					"0": that.env.users[0].name,
+					"1": that.env.users[1].name,
+				}
 				score = JSON.stringify(score);
 				that.env.users[0].socket.emit(event, score);
 				that.env.users[1].socket.emit(event, score);
@@ -112,6 +116,7 @@ let GameEnv = class {
 			}
 			moveCompletedCallback(data) {
 				let j = JSON.parse(data);
+				if (j["round_id"] != this.roundId) return;
 				this.situation[parseInt(j["move-x"])][parseInt(j["move-y"])] = this.symbols[this.turn];
 				this.turn = this.turn == 0 ? 1 : 0;
 				this.moves += 1
@@ -166,15 +171,18 @@ let GameEnv = class {
 			}
 		}
 
-		let round = new this.GameRound();
+		var round = new this.GameRound();
 		round.move();
 		
 		let rematchCallback = (d) => {
+			console.log('rematch called')
 			this.env.users[0].socket.emit('clearBoard', '')
 			this.env.users[1].socket.emit('clearBoard', '')
+			let prevStarter = round.turn
 			round = null
-			round = new that.GameRound();
+			round = new this.GameRound(turn = prevStarter);
 			round.move()
+			console.log(round.situation)
 		}
 
 		this.env.users[0].socket.on('rematch', rematchCallback)

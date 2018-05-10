@@ -18,13 +18,31 @@
             height: 100px;
             border: 1px solid black;
         }
+        .waiting-modal {
+            z-index: 5;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9)
+        }
+        .waiting-modal div {
+            position: relative;
+            top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;
+            font-size: 2em;
+            color: wheat;
+        }
+        #turn {
+            text-align: center;
+            font-size: 1.2em;
+        }
 
     </style>
 
 </head>
 <body>
-    <h4>Send this link to your friends to invite them<br>
-        <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h4>
+    <h5>Send this link to your friends to invite them<br>
+        <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h5>
     <div id="turn"></div>
     <table>
         <tr>
@@ -51,8 +69,12 @@
     <div id="scores">
 
     </div>
-    <button>Rematch</button>
-
+    <div id="btn-rematch">Rematch</div>
+    <div class="waiting-modal">
+        <div>
+            Waiting for another player
+        </div>
+    </div>
     <script>
         let _ = $('table td')
         for (let i = 0; i < _.length; ++i) {
@@ -68,11 +90,15 @@
         const circle_symbol_svg = '<svg id="o" height="100" width="100"><circle cx="50" cy="50" r="40" stroke="blue" stroke-width="2" fill="white" /></svg>';
         
         const symbols = {}; symbols['x'] = cross_symbol_svg; symbols['o'] = circle_symbol_svg;
+        let players = {}
 
         $('table').css('pointer-events', 'none');
 
         socket.on('disconnect', reason => console.log(reason))
-        socket.on('init_id', data => id = data)
+        socket.on('init_id', data => {
+            id = data
+            $('.waiting-modal').show()
+        })
         socket.on('init_scores', initScore)
         socket.on('move', move);
         socket.on('showOppMove', showOppMove);
@@ -83,14 +109,21 @@
                 tmp[ci].innerHTML = ''
             }
         })
+
+        $('button').click(e => {
+            socket.emit('rematch', '');
+        })
         
         socket.emit('init', `{"room": "${room}", "name": "${name}"}`);
 
         function initScore(data) {
-            $('button').css('display', 'none');
+            $('#btn-rematch').css('display', 'none');
+            $('.waiting-modal').hide()
             let j = JSON.parse(data);
             roundId = j.id;
             delete j.id
+            players = j["players"];
+            delete j["players"]
             $('#scores').html('')
             for (key in j) {
                 console.log(j[key])
@@ -100,8 +133,10 @@
 
         function move(data) {
             console.log(data);
+            let j = JSON.parse(data)
             $('table').css('pointer-events', 'auto');
-            callbackJ = JSON.parse(data);
+            $('#turn').html(`<strong>${players[j.turn]}</strong> turn`)
+            callbackJ = j;
         }
         $('td').click({j: callbackJ}, tdClickCallback);
         function tdClickCallback(e) {
@@ -126,14 +161,13 @@
 
         function gameOver(data) {
             let j = JSON.parse(data)
-            
-            $('button').css('display', 'block')
-            console.log($('button').css('display'))
+    
+            $('#btn-rematch').css('display', 'block');
+            // let k = $('button').css('display')
+            // console.log(k)
         }
 
-        // $('button').click(e => {
-        //     socket.emit('rematch', '')
-        // })
+        
     </script>
 
 </body>
