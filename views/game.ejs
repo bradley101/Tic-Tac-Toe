@@ -26,7 +26,12 @@
             height: 100vh;
             background-color: rgba(0, 0, 0, 0.9)
         }
-        .waiting-modal div {
+        .waiting-modal div:nth-child(1) {
+            position: relative;
+            top:0; left: 0; text-align: center;
+            color: wheat;
+        }
+        .waiting-modal div:nth-child(2) {
             position: relative;
             top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;
             font-size: 2em;
@@ -47,12 +52,7 @@
             width: -ms-fit-content;
             margin: auto;
         }
-        .hide {
-            display: none;
-        }
-        .show {
-            display: block;
-        }
+        
 
     </style>
 
@@ -61,9 +61,6 @@
     <h5>Create your own room by clicking here<br>
         <a href="https://remote-tic-tac-toe.herokuapp.com/" target="_blank">https://remote-tic-tac-toe.herokuapp.com/</a></h5>
     </h5>
-    <h5>Send this link to your friends to invite them to this round<br>
-        <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h5>
-    <br>
     
     <div id="turn"></div>
     <table>
@@ -93,6 +90,11 @@
     </div>
     <div id="btn-rematch">Rematch</div>
     <div class="waiting-modal">
+        <div>
+            <h5>Send this link to your friends to invite them to this round<br>
+                <a href="https://remote-tic-tac-toe.herokuapp.com/play/<%= room %>">https://remote-tic-tac-toe.herokuapp.com/play/<%= room %></a></h5>
+            <br>
+        </div>
         <div>
             Waiting for another player
         </div>
